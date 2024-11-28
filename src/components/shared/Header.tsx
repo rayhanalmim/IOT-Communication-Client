@@ -9,16 +9,12 @@ const Header = () => {
   const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
 
-  // Function to handle opening the Add Category modal
   const openAddCategoryModal = () => setIsAddCategoryModalOpen(true);
 
-  // Function to handle closing the Add Category modal
   const closeAddCategoryModal = () => setIsAddCategoryModalOpen(false);
 
-  // Function to handle opening the Add Item modal
   const openAddItemModal = () => setIsAddItemModalOpen(true);
 
-  // Function to handle closing the Add Item modal
   const closeAddItemModal = () => setIsAddItemModalOpen(false);
 
   return (
@@ -45,14 +41,14 @@ const Header = () => {
           <button
             type="button"
             className="py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-            onClick={openAddItemModal} // Open the Add Item Modal
+            onClick={openAddItemModal} 
           >
             Add Animal
           </button>
           <button
             type="button"
             className="py-2.5 px-5 me-2 mb-2 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-            onClick={openAddCategoryModal} // Open the Add Category Modal
+            onClick={openAddCategoryModal}
           >
             Add Category
           </button>
