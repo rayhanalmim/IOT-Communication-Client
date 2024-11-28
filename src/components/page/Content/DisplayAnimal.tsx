@@ -26,10 +26,9 @@ const DisplayAnimal: React.FC<DisplayAnimalProps> = ({ content }) => {
   ];
 
   return (
-    <div className="mx-32 mt-4">
+    <div className="mx-32 my-4 mb-6">
       <p>{content}</p>
 
-      {/* Grid layout for displaying the animal cards */}
       <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-3 xl:grid-cols-5 gap-6 mt-6">
         {animals.map((animal, index) => (
           <div
