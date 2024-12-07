@@ -1,29 +1,41 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import io from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:5000'; 
+import React, { useState, useEffect } from "react";
+import io from "socket.io-client";
+import { ethers } from "ethers";
+import Web3Modal from "web3modal";
+import { EthereumProvider } from "@walletconnect/ethereum-provider";
 
-const Connect = () => {
-  // State to hold device information
+// Configuration for Web3Modal and Socket.IO
+const SOCKET_URL = "http://localhost:5000";
+const NODE_API_URL = "http://localhost:5000/getMacAddress";
+
+const Connect = ({
+  onWalletConnect,
+}: {
+  onWalletConnect: (provider: ethers.providers.Web3Provider | null) => void;
+}) => {
   const [deviceInfo, setDeviceInfo] = useState({
-    name: '',
-    macAddress: '',
-    ipAddress: '',  
-    status: 'offline', 
+    name: "",
+    macAddress: "",
+    ipAddress: "",
+    status: "offline",
+    walletAddress: "",
   });
 
-  const [connectedDevices, setConnectedDevices] = useState<string[]>([]); 
-  const [message, setMessage] = useState<string>(''); 
+  const [connectedDevices, setConnectedDevices] = useState<string[]>([]);
+  const [message, setMessage] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
+  // Socket.IO connection and event handling
   useEffect(() => {
     const socket = io(SOCKET_URL);
 
-    socket.on('connected-devices', (devices: string[]) => {
+    socket.on("connected-devices", (devices: string[]) => {
       setConnectedDevices(devices);
     });
 
-    socket.on('new-message', (msg: string) => {
+    socket.on("new-message", (msg: string) => {
       setMessage(msg);
     });
 
@@ -32,86 +44,149 @@ const Connect = () => {
     };
   }, []);
 
+  // Fetching IP address
   const fetchIpAddress = async () => {
     try {
-      const response = await fetch('https://api.ipify.org?format=json');
+      const response = await fetch("https://api.ipify.org?format=json");
       const data = await response.json();
       return data.ip;
     } catch (error) {
       console.error("Error fetching IP address:", error);
-      return '';
+      return "";
     }
   };
 
-  const simulateMacAddress = () => {
-    return '00:14:22:01:23:45'; // Simulated MAC Address (This should be dynamic if possible)
-  };
-
-  // Handle device connection (Send device info to server)
-  const handleConnect = async () => {
-    if (!deviceInfo.name) {
-      alert('Please provide a device name');
-      return;
+  // Fetching MAC address
+  const fetchMacAddress = async () => {
+    try {
+      const response = await fetch(NODE_API_URL);
+      const data = await response.json();
+      return data.macAddress || "Unavailable";
+    } catch (error) {
+      console.log("Error fetching MAC address:", error);
+      return "Unavailable";
     }
-
-    // Fetch IP address and simulate MAC address
-    const ip = await fetchIpAddress();
-    const mac = simulateMacAddress();
-
-    setDeviceInfo({
-      name: deviceInfo.name,
-      macAddress: mac,
-      ipAddress: ip,
-      status: 'online', // Change device status to online once connected
-    });
-
-    // Send device info to server upon connection
-    const socket = io(SOCKET_URL);
-    socket.emit('device-connect', deviceInfo);
   };
 
-  // Handle device disconnection
+  const connectWallet = async () => {
+    try {
+      setLoading(true);
+
+      // WalletConnect provider setup
+      const providerOptions = {
+        walletconnect: {
+          package: EthereumProvider,
+          options: {
+            projectId: "YOUR_WALLETCONNECT_PROJECT_ID",
+            rpc: {
+              43113: "https://api.avax-test.network/ext/bc/C/rpc",
+            },
+          },
+        },
+      };
+
+      const web3Modal = new Web3Modal({
+        cacheProvider: true,
+        providerOptions,
+      });
+
+      // Connect to wallet
+      const instance = await web3Modal.connect();
+      const provider = new ethers.providers.Web3Provider(instance);
+      const signer = provider.getSigner();
+      const walletAddress = await signer.getAddress();
+
+      // Fetch device info (IP & MAC address)
+      const ip = await fetchIpAddress();
+      const mac = await fetchMacAddress();
+
+      setDeviceInfo({
+        ...deviceInfo,
+        walletAddress,
+        ipAddress: ip,
+        macAddress: mac,
+        status: "online",
+      });
+
+      // Emit device connection via socket
+      const socket = io(SOCKET_URL);
+      socket.emit("device-connect", {
+        name: deviceInfo.name,
+        walletAddress,
+        ipAddress: ip,
+        macAddress: mac,
+        status: "online",
+      });
+    } catch (error) {
+      console.error("Error connecting wallet:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Disconnect device
   const handleDisconnect = () => {
+    const socket = io(SOCKET_URL);
+
+    socket.emit("device-disconnect", deviceInfo);
+
     setDeviceInfo({
-      name: '',
-      macAddress: '',
-      ipAddress: '',
-      status: 'offline',
+      name: "",
+      macAddress: "",
+      ipAddress: "",
+      walletAddress: "",
+      status: "offline",
     });
 
-    // Emit disconnection event to the server
-    const socket = io(SOCKET_URL);
-    socket.emit('device-disconnect', deviceInfo);
     socket.disconnect();
   };
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6">Connect Your Device</h2>
+
+      {deviceInfo.walletAddress ? (
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          Your device is connected
+        </h2>
+      ) : (
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          Connect Your Device
+        </h2>
+      )}
 
       <div className="space-y-4">
         {/* Device Name */}
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">Device Name:</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={deviceInfo.name}
-            onChange={(e) => setDeviceInfo({ ...deviceInfo, name: e.target.value })}
-            placeholder="Enter device name"
-            className="mt-2 w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        {deviceInfo.walletAddress || (
+          <div>
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Device Name:
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={deviceInfo.name}
+              onChange={(e) =>
+                setDeviceInfo({ ...deviceInfo, name: e.target.value })
+              }
+              placeholder="Enter device name"
+              className="mt-2 w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        )}
 
         {/* Connect or Disconnect Button */}
         <div className="mt-4">
-          {deviceInfo.status === 'offline' ? (
+          {deviceInfo.status === "offline" ? (
             <button
-              onClick={handleConnect}
+              onClick={connectWallet}
+              disabled={loading}
               className="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              Connect Device
+              {loading ? "Connecting..." : "Connect Device"}
             </button>
           ) : (
             <button
@@ -125,20 +200,34 @@ const Connect = () => {
       </div>
 
       {/* Display Device Info */}
-      {deviceInfo.ipAddress && deviceInfo.macAddress && (
+      {deviceInfo.walletAddress && (
         <div className="mt-8">
-          <p className="text-sm text-gray-600">IP Address: {deviceInfo.ipAddress}</p>
-          <p className="text-sm text-gray-600">MAC Address: {deviceInfo.macAddress}</p>
+          <p className="text-sm text-gray-600">
+            Wallet Address: {deviceInfo.name}
+          </p>
+          <p className="text-sm text-gray-600">
+            Wallet Address: {deviceInfo.walletAddress}
+          </p>
+          <p className="text-sm text-gray-600">
+            IP Address: {deviceInfo.ipAddress}
+          </p>
+          <p className="text-sm text-gray-600">
+            MAC Address: {deviceInfo.macAddress}
+          </p>
         </div>
       )}
 
       {/* Connected Devices */}
       <div className="mt-8">
-        <h3 className="text-xl font-medium text-gray-800">Connected Devices:</h3>
+        <h3 className="text-xl font-medium text-gray-800">
+          Connected Devices:
+        </h3>
         <ul className="mt-2 space-y-2">
           {connectedDevices.length > 0 ? (
             connectedDevices.map((device, index) => (
-              <li key={index} className="text-sm text-gray-600">{device}</li>
+              <li key={index} className="text-sm text-gray-600">
+                {device}
+              </li>
             ))
           ) : (
             <li className="text-sm text-gray-500">No devices connected</li>
@@ -149,7 +238,9 @@ const Connect = () => {
       {/* Messages */}
       <div className="mt-8">
         <h3 className="text-xl font-medium text-gray-800">Messages:</h3>
-        <p className="mt-2 text-sm text-gray-600">{message ? message : 'No new messages'}</p>
+        <p className="mt-2 text-sm text-gray-600">
+          {message ? message : "No new messages"}
+        </p>
       </div>
     </div>
   );
