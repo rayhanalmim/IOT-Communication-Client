@@ -5,12 +5,13 @@ import io from "socket.io-client";
 import { ethers } from "ethers";
 import Web3Modal from "web3modal";
 import { EthereumProvider } from "@walletconnect/ethereum-provider";
+import ConnectedDev from "./ConnectedDev";
 
 // Configuration for Web3Modal and Socket.IO
 const SOCKET_URL = "http://localhost:5000";
 const NODE_API_URL = "http://localhost:5000/getMacAddress";
 
-const Connect = ({
+const ConnectUser = ({
   onWalletConnect,
 }: {
   onWalletConnect: (provider: ethers.providers.Web3Provider | null) => void;
@@ -142,7 +143,7 @@ const Connect = ({
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md">
+    <div className=" p-6 bg-white rounded-lg shadow-md">
 
       {deviceInfo.walletAddress ? (
         <h2 className="text-2xl font-semibold text-gray-800 mb-6">
@@ -216,25 +217,11 @@ const Connect = ({
           </p>
         </div>
       )}
-
-      {/* Connected Devices */}
-      <div className="mt-8">
-        <h3 className="text-xl font-medium text-gray-800">
-          Connected Devices:
-        </h3>
-        <ul className="mt-2 space-y-2">
-          {connectedDevices.length > 0 ? (
-            connectedDevices.map((device, index) => (
-              <li key={index} className="text-sm text-gray-600">
-                {device}
-              </li>
-            ))
-          ) : (
-            <li className="text-sm text-gray-500">No devices connected</li>
-          )}
-        </ul>
-      </div>
-
+      
+      {
+        deviceInfo.walletAddress && <ConnectedDev connectedDevices={connectedDevices} />
+      }
+      
       {/* Messages */}
       <div className="mt-8">
         <h3 className="text-xl font-medium text-gray-800">Messages:</h3>
@@ -246,4 +233,4 @@ const Connect = ({
   );
 };
 
-export default Connect;
+export default ConnectUser;

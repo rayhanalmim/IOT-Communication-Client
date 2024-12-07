@@ -1,8 +1,9 @@
-"use client"
-import Connect from "@/components/page/connect";
+"use client";
 import Image from "next/image";
 import { ethers } from "ethers";
 import { useState } from "react";
+import ConnectUser from "@/components/page/ConnectUser";
+import ConnectedDev from "@/components/page/ConnectedDev";
 
 export default function Home() {
   const [provider, setProvider] =
@@ -16,8 +17,16 @@ export default function Home() {
 
   return (
     <div>
-      <h1>Home</h1>
-      <Connect onWalletConnect={handleWalletConnect}></Connect>
+      <div className="pt-4">
+        {provider ? (
+          <ConnectUser onWalletConnect={handleWalletConnect}></ConnectUser>
+        ) : (
+          <div className="grid grid-cols-2">
+            <ConnectUser onWalletConnect={handleWalletConnect}></ConnectUser>
+            <ConnectedDev connectedDevices={["1", "2", "3"]}></ConnectedDev>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
