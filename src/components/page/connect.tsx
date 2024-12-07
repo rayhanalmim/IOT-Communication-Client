@@ -2,43 +2,36 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 
-// Define the backend Socket.IO server URL
-const SOCKET_URL = 'http://localhost:5000'; // Replace with your backend URL
+const SOCKET_URL = 'http://localhost:5000'; 
 
 const Connect = () => {
   // State to hold device information
   const [deviceInfo, setDeviceInfo] = useState({
     name: '',
-    macAddress: '', // Will be simulated
-    ipAddress: '',  // To be fetched dynamically
-    status: 'offline', // default status
+    macAddress: '',
+    ipAddress: '',  
+    status: 'offline', 
   });
 
-  // State to manage real-time connection status and messages
-  const [connectedDevices, setConnectedDevices] = useState<string[]>([]); // List of connected devices
-  const [message, setMessage] = useState<string>(''); // Latest message received
+  const [connectedDevices, setConnectedDevices] = useState<string[]>([]); 
+  const [message, setMessage] = useState<string>(''); 
 
-  // Create a socket connection (to be managed with connect and disconnect logic)
   useEffect(() => {
     const socket = io(SOCKET_URL);
 
-    // Listen for updates on connected devices
     socket.on('connected-devices', (devices: string[]) => {
       setConnectedDevices(devices);
     });
 
-    // Listen for messages from other devices
     socket.on('new-message', (msg: string) => {
       setMessage(msg);
     });
 
-    // Cleanup the socket connection when component unmounts
     return () => {
       socket.disconnect();
     };
   }, []);
 
-  // Fetch the device's public IP address
   const fetchIpAddress = async () => {
     try {
       const response = await fetch('https://api.ipify.org?format=json');
@@ -50,7 +43,6 @@ const Connect = () => {
     }
   };
 
-  // Simulate MAC address (In reality, this would need to be handled server-side or through specific APIs)
   const simulateMacAddress = () => {
     return '00:14:22:01:23:45'; // Simulated MAC Address (This should be dynamic if possible)
   };

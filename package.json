@@ -13,6 +13,7 @@
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "getmac": "^6.6.0",
     "install": "^0.13.0",
     "lucide-react": "^0.462.0",
     "next": "15.0.3",
